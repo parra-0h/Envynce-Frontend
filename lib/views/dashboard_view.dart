@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../theme/app_theme.dart';
 import '../widgets/page_header.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/app_card.dart';
+import '../providers/dashboard_provider.dart';
 import 'components/activity_chart.dart';
 
-class DashboardView extends StatelessWidget {
+class DashboardView extends ConsumerWidget {
   const DashboardView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(dashboardStatsProvider);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -21,87 +25,102 @@ class DashboardView extends StatelessWidget {
             description: 'Overview of your system activity and health.',
           ),
           const SizedBox(height: 24),
-          _buildMetricsGrid(context),
-          const SizedBox(height: 24),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Expanded(flex: 2, child: ActivityChart()),
-              if (MediaQuery.of(context).size.width > 1200) ...[
-                const SizedBox(width: 24),
-                Expanded(flex: 1, child: _buildRecentActivityList()),
+          statsAsync.when(
+            data: (stats) => Column(
+              children: [
+                _buildMetricsGrid(context, stats),
+                const SizedBox(height: 24),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Expanded(flex: 2, child: ActivityChart()),
+                    if (MediaQuery.of(context).size.width > 1200) ...[
+                      const SizedBox(width: 24),
+                      Expanded(
+                        flex: 1,
+                        child: _buildRecentActivityList(stats.updates),
+                      ),
+                    ],
+                  ],
+                ),
+                if (MediaQuery.of(context).size.width <= 1200) ...[
+                  const SizedBox(height: 24),
+                  _buildRecentActivityList(stats.updates),
+                ],
               ],
-            ],
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
           ),
-          if (MediaQuery.of(context).size.width <= 1200) ...[
-            const SizedBox(height: 24),
-            _buildRecentActivityList(),
-          ],
         ],
       ),
     );
   }
 
-  Widget _buildMetricsGrid(BuildContext context) {
-    // Responsive grid
+  Widget _buildMetricsGrid(BuildContext context, DashboardStats stats) {
     double width = MediaQuery.of(context).size.width;
     int crossAxisCount = width > 1400 ? 4 : (width > 1000 ? 2 : 1);
 
-    // Manual grid for better control or use Wrap/GridView
     return Wrap(
       spacing: 16,
       runSpacing: 16,
       children: [
-        SizedBox(
-          width: (width - 48 - (16 * (crossAxisCount - 1))) / crossAxisCount,
-          child: const MetricCard(
-            label: 'Total Requests',
-            value: '2.4M',
-            icon: LucideIcons.activity,
-            trend: '12%',
-            isTrendPositive: true,
-          ),
-        ),
-        SizedBox(
-          width: (width - 48 - (16 * (crossAxisCount - 1))) / crossAxisCount,
-          child: const MetricCard(
-            label: 'Active Configurations',
-            value: '142',
-            icon: LucideIcons.settings,
-            trend: '4%',
-            isTrendPositive: true,
-          ),
-        ),
-        SizedBox(
-          width: (width - 48 - (16 * (crossAxisCount - 1))) / crossAxisCount,
-          child: const MetricCard(
+        _metricWrapper(
+          width,
+          crossAxisCount,
+          MetricCard(
             label: 'Registered Apps',
-            value: '12',
+            value: stats.totalApps.toString(),
             icon: LucideIcons.layers,
-            trend: '0%',
-            isTrendPositive: true, // Neutral
+            trend: 'Directly from API',
+            isTrendPositive: true,
           ),
         ),
-        SizedBox(
-          width: (width - 48 - (16 * (crossAxisCount - 1))) / crossAxisCount,
-          child: const MetricCard(
-            label: 'Error Rate',
-            value: '0.05%',
-            icon: LucideIcons.alertCircle,
-            trend: '0.01%',
-            isTrendPositive:
-                false, // Negative trend is good for errors usually, but here green means good.
-            // Let's assume widget takes isTrendPositive as "Visual Green".
-            // If error rate went DOWN, it is good (Green).
-            // If error rate went UP, it is bad (Red).
-            // Let's say it went DOWN.
+        _metricWrapper(
+          width,
+          crossAxisCount,
+          MetricCard(
+            label: 'Total Configurations',
+            value: stats.totalConfigs.toString(),
+            icon: LucideIcons.settings,
+            trend: 'Across all envs',
+            isTrendPositive: true,
+          ),
+        ),
+        _metricWrapper(
+          width,
+          crossAxisCount,
+          MetricCard(
+            label: 'Active Configs',
+            value: stats.activeConfigs.toString(),
+            icon: LucideIcons.zap,
+            trend: 'Currently serving',
+            isTrendPositive: true,
+          ),
+        ),
+        _metricWrapper(
+          width,
+          crossAxisCount,
+          MetricCard(
+            label: 'Environments',
+            value: stats.totalEnvironments.toString(),
+            icon: LucideIcons.server,
+            trend: 'Active stages',
+            isTrendPositive: true,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildRecentActivityList() {
+  Widget _metricWrapper(double width, int count, Widget child) {
+    return SizedBox(
+      width: (width - 48 - (16 * (count - 1))) / count,
+      child: child,
+    );
+  }
+
+  Widget _buildRecentActivityList(List<dynamic> updates) {
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,84 +140,78 @@ class DashboardView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 5,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              return Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+          if (updates.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text(
+                  'No recent activity found',
+                  style: TextStyle(color: AppTheme.textSecondary),
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: updates.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
+              itemBuilder: (context, index) {
+                final update = updates[index];
+                return Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        LucideIcons.edit3,
+                        size: 16,
+                        color: AppTheme.primaryColor,
+                      ),
                     ),
-                    child: _getActivityIcon(index),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.textPrimary,
-                            ),
-                            children: [
-                              const TextSpan(text: 'Updated config '),
-                              TextSpan(
-                                text: 'feature_flags.${index + 1}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'monospace',
-                                ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.textPrimary,
                               ),
-                            ],
+                              children: [
+                                const TextSpan(text: 'Updated '),
+                                TextSpan(
+                                  text: update['key'] ?? 'unknown',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          '2 minutes ago by admin@company.com',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
+                          const SizedBox(height: 2),
+                          Text(
+                            '${update['user_name'] ?? 'User'} - ${update['created_at'] ?? ''}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textSecondary,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              );
-            },
-          ),
+                  ],
+                );
+              },
+            ),
         ],
       ),
     );
-  }
-
-  Widget _getActivityIcon(int index) {
-    if (index % 3 == 0) {
-      return const Icon(
-        LucideIcons.edit3,
-        size: 16,
-        color: AppTheme.primaryColor,
-      );
-    } else if (index % 3 == 1) {
-      return const Icon(
-        LucideIcons.plus,
-        size: 16,
-        color: AppTheme.successColor,
-      );
-    } else {
-      return const Icon(
-        LucideIcons.trash2,
-        size: 16,
-        color: AppTheme.errorColor,
-      );
-    }
   }
 }

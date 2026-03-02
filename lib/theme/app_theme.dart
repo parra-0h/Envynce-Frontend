@@ -39,8 +39,7 @@ class AppTheme {
       primaryColor: primaryColor,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
-        background: backgroundColor,
-        surface: surfaceColor,
+        surface: backgroundColor,
         error: errorColor,
       ),
       textTheme: GoogleFonts.interTextTheme().apply(

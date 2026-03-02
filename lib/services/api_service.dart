@@ -6,12 +6,30 @@ class ApiService {
       baseUrl: 'http://localhost:8080',
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 3),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': 'secret-key', // From backend config default
-      },
+      headers: {'Content-Type': 'application/json'},
     ),
   );
+
+  String? _token;
+
+  ApiService() {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (_token != null) {
+            options.headers['Authorization'] = 'Bearer $_token';
+          }
+          // The x-api-key might be needed for some endpoints or as a fallback
+          options.headers['x-api-key'] = 'secret-key';
+          return handler.next(options);
+        },
+      ),
+    );
+  }
+
+  void setToken(String? token) {
+    _token = token;
+  }
 
   Future<Response> get(
     String path, {
@@ -32,11 +50,29 @@ class ApiService {
     }
   }
 
+  Future<Response> put(String path, dynamic data) async {
+    try {
+      return await _dio.put(path, data: data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Response> delete(String path) async {
+    try {
+      return await _dio.delete(path);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   Exception _handleError(DioException e) {
     if (e.response != null) {
-      return Exception(
-        'API Error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.message}',
-      );
+      final message =
+          e.response?.data?['message'] ??
+          e.response?.data?['error'] ??
+          e.message;
+      return Exception('API Error: ${e.response?.statusCode} - $message');
     }
     return Exception('Network Error: ${e.message}');
   }

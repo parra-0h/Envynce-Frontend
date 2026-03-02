@@ -1,23 +1,50 @@
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../services/api_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'auth_provider.dart';
 import '../models/configuration_model.dart';
+import '../models/app_model.dart';
 
-final apiServiceProvider = Provider((ref) => ApiService());
+// Selection State
+class SelectedApplication extends Notifier<Application?> {
+  @override
+  Application? build() => null;
+  void set(Application? app) => state = app;
+}
 
-final applicationsProvider = FutureProvider<List<dynamic>>((ref) async {
+final selectedApplicationProvider =
+    NotifierProvider<SelectedApplication, Application?>(
+      SelectedApplication.new,
+    );
+
+class SelectedEnvironment extends Notifier<Environment?> {
+  @override
+  Environment? build() => null;
+  void set(Environment? env) => state = env;
+}
+
+final selectedEnvironmentProvider =
+    NotifierProvider<SelectedEnvironment, Environment?>(
+      SelectedEnvironment.new,
+    );
+
+// Applications
+final applicationsProvider = FutureProvider<List<Application>>((ref) async {
   final api = ref.watch(apiServiceProvider);
   final response = await api.get('/applications');
-  return response.data['data'] ?? [];
+  final List<dynamic> data = response.data['data'] ?? [];
+  return data.map((json) => Application.fromJson(json)).toList();
 });
 
-final environmentsProvider = FutureProvider<List<dynamic>>((ref) async {
+// Environments
+final environmentsProvider = FutureProvider<List<Environment>>((ref) async {
   final api = ref.watch(apiServiceProvider);
   final response = await api.get('/environments');
-  return response.data['data'] ?? [];
+  final List<dynamic> data = response.data['data'] ?? [];
+  return data.map((json) => Environment.fromJson(json)).toList();
 });
 
+// Configurations
 final configurationsProvider =
-    FutureProvider.family<List<ConfigurationItem>, Map<String, int>>((
+    FutureProvider.family<List<ConfigurationItem>, Map<String, dynamic>>((
       ref,
       params,
     ) async {
@@ -25,25 +52,54 @@ final configurationsProvider =
       final response = await api.get(
         '/configs',
         queryParameters: {
-          'application_id': params['application_id'],
-          'environment_id': params['environment_id'],
+          if (params['application_id'] != null)
+            'application_id': params['application_id'],
+          if (params['environment_id'] != null)
+            'environment_id': params['environment_id'],
+          if (params['search'] != null) 'search': params['search'],
         },
       );
 
       final List<dynamic> data = response.data['data'] ?? [];
-      return data
-          .map(
-            (json) => ConfigurationItem(
-              id: json['id'].toString(),
-              key: json['key'],
-              value: json['value'],
-              environment: json['environment_id']
-                  .toString(), // Simplified for now
-              version: json['version'] ?? '1.0.0',
-              lastUpdated:
-                  DateTime.tryParse(json['updated_at'] ?? '') ?? DateTime.now(),
-              isActive: json['is_active'] ?? true,
-            ),
-          )
-          .toList();
+      return data.map((json) => ConfigurationItem.fromJson(json)).toList();
+    });
+
+// Configuration Versions
+final configVersionsProvider =
+    FutureProvider.family<List<ConfigVersion>, String>((ref, configId) async {
+      final api = ref.watch(apiServiceProvider);
+      final response = await api.get('/configs/$configId/versions');
+      final List<dynamic> data = response.data['data'] ?? [];
+      return data.map((json) => ConfigVersion.fromJson(json)).toList();
+    });
+
+// CRUD Mutations
+final saveConfigurationProvider =
+    FutureProvider.family<void, Map<String, dynamic>>((ref, data) async {
+      final api = ref.watch(apiServiceProvider);
+      final id = data['id'];
+
+      if (id == null) {
+        await api.post('/configs', data);
+      } else {
+        await api.put('/configs/$id', data);
+      }
+
+      ref.invalidate(configurationsProvider);
+    });
+
+final deleteConfigurationProvider = FutureProvider.family<void, String>((
+  ref,
+  id,
+) async {
+  final api = ref.watch(apiServiceProvider);
+  await api.delete('/configs/$id');
+  ref.invalidate(configurationsProvider);
+});
+
+final createApplicationProvider =
+    FutureProvider.family<void, Map<String, dynamic>>((ref, data) async {
+      final api = ref.watch(apiServiceProvider);
+      await api.post('/applications', data);
+      ref.invalidate(applicationsProvider);
     });

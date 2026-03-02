@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
+import '../providers/auth_provider.dart';
 
-class Sidebar extends StatelessWidget {
+class Sidebar extends ConsumerWidget {
   const Sidebar({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+
     return Container(
       width: 260,
       decoration: const BoxDecoration(
@@ -95,7 +100,7 @@ class Sidebar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          _buildUserSection(),
+          if (user != null) _buildUserSection(context, ref, user),
         ],
       ),
     );
@@ -117,14 +122,14 @@ class Sidebar extends StatelessWidget {
               color: AppTheme.primaryColor,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Icon(LucideIcons.box, color: Colors.white, size: 20),
+            child: const Icon(LucideIcons.zap, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
           const Text(
-            'ConfigService',
+            'Envynce',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
             ),
@@ -134,7 +139,9 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildUserSection() {
+  Widget _buildUserSection(BuildContext context, WidgetRef ref, dynamic user) {
+    final nameInitial = user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -142,12 +149,12 @@ class Sidebar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             backgroundColor: AppTheme.primaryColor,
             radius: 18,
             child: Text(
-              'AD',
-              style: TextStyle(
+              nameInitial,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -155,33 +162,36 @@ class Sidebar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Admin User',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Text(
-                'admin@company.com',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  fontSize: 12,
+                Text(
+                  user.role.toString().split('.').last.toUpperCase(),
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const Spacer(),
           IconButton(
-            onPressed: () {},
+            onPressed: () => ref.read(authProvider.notifier).logout(),
             icon: Icon(
               LucideIcons.logOut,
               size: 18,
-              color: Colors.white.withValues(alpha: 0.6),
+              color: Colors.white.withOpacity(0.6),
             ),
             tooltip: 'Logout',
           ),
@@ -205,7 +215,11 @@ class _SidebarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String currentLocation = GoRouterState.of(context).uri.toString();
-    final bool isActive = currentLocation == route;
+    // Check if the current location starts with the route to handle nested routes or parameters
+    // But for this simple app, we'll use exact match or sub-path check
+    final bool isActive =
+        currentLocation == route ||
+        (route != '/' && currentLocation.startsWith(route));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
@@ -215,7 +229,7 @@ class _SidebarItem extends StatelessWidget {
         child: InkWell(
           onTap: () => context.go(route),
           borderRadius: BorderRadius.circular(6),
-          hoverColor: Colors.white.withValues(alpha: 0.05),
+          hoverColor: Colors.white.withOpacity(0.05),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
             child: Row(
@@ -224,7 +238,7 @@ class _SidebarItem extends StatelessWidget {
                   icon,
                   color: isActive
                       ? Colors.white
-                      : Colors.white.withValues(alpha: 0.7),
+                      : Colors.white.withOpacity(0.7),
                   size: 18,
                 ),
                 const SizedBox(width: 12),
@@ -234,7 +248,7 @@ class _SidebarItem extends StatelessWidget {
                     fontSize: 14,
                     color: isActive
                         ? Colors.white
-                        : Colors.white.withValues(alpha: 0.7),
+                        : Colors.white.withOpacity(0.7),
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
