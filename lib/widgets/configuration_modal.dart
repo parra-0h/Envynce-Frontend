@@ -187,8 +187,8 @@ class _ConfigurationModalState extends ConsumerState<ConfigurationModal> {
           'key': _keyController.text,
           'value': _valueController.text,
           'description': _descController.text,
-          'application_id': widget.applicationId,
-          'environment_id': widget.environmentId,
+          'application_id': int.tryParse(widget.applicationId) ?? 0,
+          'environment_id': int.tryParse(widget.environmentId) ?? 0,
           'is_active': _isActive,
         };
 

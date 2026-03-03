@@ -23,17 +23,18 @@ class ConfigurationItem {
 
   factory ConfigurationItem.fromJson(Map<String, dynamic> json) {
     return ConfigurationItem(
-      id: json['id'].toString(),
-      key: json['key'] as String,
-      value: json['value'] as String,
+      id: json['id']?.toString() ?? '',
+      key: json['key'] as String? ?? '',
+      value: json['value'] as String? ?? '',
       environment:
-          json['environment_name'] ??
+          json['environment_name'] as String? ??
           json['environment_id']?.toString() ??
           'Unknown',
       environmentId: json['environment_id']?.toString(),
-      version: json['version'] ?? '1.0.0',
+      version: json['version']?.toString() ?? '1',
       lastUpdated:
-          DateTime.tryParse(json['updated_at'] ?? '') ?? DateTime.now(),
+          DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
+          DateTime.now(),
       isActive: json['is_active'] ?? true,
       description: json['description'] as String?,
     );
@@ -71,11 +72,13 @@ class ConfigVersion {
 
   factory ConfigVersion.fromJson(Map<String, dynamic> json) {
     return ConfigVersion(
-      id: json['id'].toString(),
-      key: json['key'] as String,
-      value: json['value'] as String,
-      version: json['version'] as String,
-      createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
+      id: json['id']?.toString() ?? '',
+      key: json['key'] as String? ?? '',
+      value: json['value'] as String? ?? '',
+      version: json['version']?.toString() ?? '1',
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
       createdBy: json['created_by_name'] as String?,
     );
   }

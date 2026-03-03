@@ -42,7 +42,7 @@ class PageHeader extends StatelessWidget {
             ],
           ],
         ),
-        if (actions != null)
+        if (actions != null && actions!.isNotEmpty)
           Row(
             children: actions!
                 .expand((element) => [element, const SizedBox(width: 12)])

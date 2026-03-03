@@ -178,7 +178,7 @@ class Sidebar extends ConsumerWidget {
                 Text(
                   user.role.toString().split('.').last.toUpperCase(),
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -191,7 +191,7 @@ class Sidebar extends ConsumerWidget {
             icon: Icon(
               LucideIcons.logOut,
               size: 18,
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
             ),
             tooltip: 'Logout',
           ),
@@ -229,7 +229,7 @@ class _SidebarItem extends StatelessWidget {
         child: InkWell(
           onTap: () => context.go(route),
           borderRadius: BorderRadius.circular(6),
-          hoverColor: Colors.white.withOpacity(0.05),
+          hoverColor: Colors.white.withValues(alpha: 0.05),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
             child: Row(
@@ -238,7 +238,7 @@ class _SidebarItem extends StatelessWidget {
                   icon,
                   color: isActive
                       ? Colors.white
-                      : Colors.white.withOpacity(0.7),
+                      : Colors.white.withValues(alpha: 0.7),
                   size: 18,
                 ),
                 const SizedBox(width: 12),
@@ -248,7 +248,7 @@ class _SidebarItem extends StatelessWidget {
                     fontSize: 14,
                     color: isActive
                         ? Colors.white
-                        : Colors.white.withOpacity(0.7),
+                        : Colors.white.withValues(alpha: 0.7),
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),

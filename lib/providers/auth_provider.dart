@@ -29,10 +29,7 @@ class AuthState {
 }
 
 final apiServiceProvider = Provider<ApiService>((ref) {
-  final api = ApiService();
-  // We can't watch authProvider here directly if it creates a circular dependency
-  // Instead, the authProvider will push the token to apiService
-  return api;
+  return ApiService();
 });
 
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -40,17 +37,21 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(apiService);
 });
 
-class AuthNotifier extends StateNotifier<AuthState> {
-  final AuthService _authService;
-  final ApiService _apiService;
-
-  AuthNotifier(this._authService, this._apiService) : super(AuthState());
+class AuthNotifier extends Notifier<AuthState> {
+  @override
+  AuthState build() {
+    print('[DEBUG-V2] AuthNotifier.build called');
+    return AuthState();
+  }
 
   Future<void> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final response = await _authService.login(email, password);
-      _apiService.setToken(response.token);
+      final authService = ref.read(authServiceProvider);
+      final apiService = ref.read(apiServiceProvider);
+
+      final response = await authService.login(email, password);
+      apiService.setToken(response.token);
       state = state.copyWith(
         user: response.user,
         token: response.token,
@@ -62,8 +63,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    await _authService.logout();
-    _apiService.setToken(null);
+    final authService = ref.read(authServiceProvider);
+    final apiService = ref.read(apiServiceProvider);
+
+    await authService.logout();
+    apiService.setToken(null);
     state = AuthState();
   }
 
@@ -72,8 +76,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  final authService = ref.watch(authServiceProvider);
-  final apiService = ref.watch(apiServiceProvider);
-  return AuthNotifier(authService, apiService);
-});
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(
+  AuthNotifier.new,
+);

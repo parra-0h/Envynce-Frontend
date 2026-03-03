@@ -58,65 +58,63 @@ class DashboardView extends ConsumerWidget {
   }
 
   Widget _buildMetricsGrid(BuildContext context, DashboardStats stats) {
-    double width = MediaQuery.of(context).size.width;
-    int crossAxisCount = width > 1400 ? 4 : (width > 1000 ? 2 : 1);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        int crossAxisCount = constraints.maxWidth > 1200
+            ? 4
+            : (constraints.maxWidth > 700 ? 2 : 1);
+        double spacing = 16;
+        double itemWidth =
+            (constraints.maxWidth - (spacing * (crossAxisCount - 1))) /
+            crossAxisCount;
 
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: [
-        _metricWrapper(
-          width,
-          crossAxisCount,
-          MetricCard(
-            label: 'Registered Apps',
-            value: stats.totalApps.toString(),
-            icon: LucideIcons.layers,
-            trend: 'Directly from API',
-            isTrendPositive: true,
-          ),
-        ),
-        _metricWrapper(
-          width,
-          crossAxisCount,
-          MetricCard(
-            label: 'Total Configurations',
-            value: stats.totalConfigs.toString(),
-            icon: LucideIcons.settings,
-            trend: 'Across all envs',
-            isTrendPositive: true,
-          ),
-        ),
-        _metricWrapper(
-          width,
-          crossAxisCount,
-          MetricCard(
-            label: 'Active Configs',
-            value: stats.activeConfigs.toString(),
-            icon: LucideIcons.zap,
-            trend: 'Currently serving',
-            isTrendPositive: true,
-          ),
-        ),
-        _metricWrapper(
-          width,
-          crossAxisCount,
-          MetricCard(
-            label: 'Environments',
-            value: stats.totalEnvironments.toString(),
-            icon: LucideIcons.server,
-            trend: 'Active stages',
-            isTrendPositive: true,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _metricWrapper(double width, int count, Widget child) {
-    return SizedBox(
-      width: (width - 48 - (16 * (count - 1))) / count,
-      child: child,
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            SizedBox(
+              width: itemWidth,
+              child: MetricCard(
+                label: 'Registered Apps',
+                value: stats.totalApps.toString(),
+                icon: LucideIcons.layers,
+                trend: 'Directly from API',
+                isTrendPositive: true,
+              ),
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: MetricCard(
+                label: 'Total Configurations',
+                value: stats.totalConfigs.toString(),
+                icon: LucideIcons.settings,
+                trend: 'Across all envs',
+                isTrendPositive: true,
+              ),
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: MetricCard(
+                label: 'Active Configs',
+                value: stats.activeConfigs.toString(),
+                icon: LucideIcons.zap,
+                trend: 'Currently serving',
+                isTrendPositive: true,
+              ),
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: MetricCard(
+                label: 'Environments',
+                value: stats.totalEnvironments.toString(),
+                icon: LucideIcons.server,
+                trend: 'Active stages',
+                isTrendPositive: true,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -163,7 +161,7 @@ class DashboardView extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(

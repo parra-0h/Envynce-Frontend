@@ -46,7 +46,7 @@ class EnvironmentsView extends ConsumerWidget {
                         : (MediaQuery.of(context).size.width > 800 ? 2 : 1),
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    mainAxisExtent: 220,
+                    mainAxisExtent: 260,
                   ),
                   itemCount: envs.length,
                   itemBuilder: (context, index) {
@@ -78,41 +78,55 @@ class EnvironmentsView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: _parseColor(env.color).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  LucideIcons.server,
-                  color: _parseColor(env.color),
-                  size: 24,
-                ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _parseColor(env.color).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          LucideIcons.server,
+                          color: _parseColor(env.color),
+                          size: 24,
+                        ),
+                      ),
+                      const StatusBadge(
+                        label: 'Active',
+                        type: StatusType.success,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    env.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Environment for configuration targeting.',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-              const StatusBadge(label: 'Active', type: StatusType.success),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            env.name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Environment for configuration targeting.',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const Spacer(),
           const Divider(),
           const SizedBox(height: 12),
           Row(

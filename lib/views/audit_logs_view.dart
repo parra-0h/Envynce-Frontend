@@ -5,71 +5,16 @@ import '../theme/app_theme.dart';
 import '../widgets/page_header.dart';
 import '../widgets/smart_table.dart';
 
-class _AuditLog {
-  final String action;
-  final String resource;
-  final String user;
-  final String ip;
-  final DateTime timestamp;
-  final String status;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/audit_provider.dart';
+import '../models/audit_log_model.dart';
 
-  _AuditLog(
-    this.action,
-    this.resource,
-    this.user,
-    this.ip,
-    this.timestamp,
-    this.status,
-  );
-}
-
-class AuditLogsView extends StatelessWidget {
+class AuditLogsView extends ConsumerWidget {
   const AuditLogsView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<_AuditLog> logs = [
-      _AuditLog(
-        'UPDATE_CONFIG',
-        'feature_flags.ui',
-        'admin@company.com',
-        '192.168.1.1',
-        DateTime.now().subtract(const Duration(minutes: 5)),
-        'Success',
-      ),
-      _AuditLog(
-        'CREATE_APP',
-        'svc-payment',
-        'system',
-        '10.0.0.1',
-        DateTime.now().subtract(const Duration(hours: 2)),
-        'Success',
-      ),
-      _AuditLog(
-        'REVOKE_KEY',
-        'pk_test_123',
-        'admin@company.com',
-        '192.168.1.1',
-        DateTime.now().subtract(const Duration(hours: 4)),
-        'Success',
-      ),
-      _AuditLog(
-        'LOGIN_FAILED',
-        'auth.login',
-        'unknown',
-        '123.45.67.89',
-        DateTime.now().subtract(const Duration(hours: 12)),
-        'Failed',
-      ),
-      _AuditLog(
-        'DELETE_ENV',
-        'staging-2',
-        'dev@company.com',
-        '172.16.0.5',
-        DateTime.now().subtract(const Duration(days: 1)),
-        'Success',
-      ),
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final logsAsync = ref.watch(auditLogsProvider);
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -87,7 +32,7 @@ class AuditLogsView extends StatelessWidget {
                 width: 300,
                 child: TextField(
                   decoration: const InputDecoration(
-                    hintText: 'Search logs (user, resource, IP)...',
+                    hintText: 'Search logs...',
                     prefixIcon: Icon(
                       LucideIcons.search,
                       size: 18,
@@ -100,7 +45,7 @@ class AuditLogsView extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: () {},
                 icon: const Icon(LucideIcons.filter, size: 16),
-                label: const Text('Filter by Date'),
+                label: const Text('Filter'),
               ),
               const Spacer(),
               OutlinedButton.icon(
@@ -112,72 +57,69 @@ class AuditLogsView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: SmartTable<_AuditLog>(
-              columns: const [
-                'Action',
-                'Resource',
-                'User',
-                'IP Address',
-                'Timestamp',
-                'Status',
-              ],
-              data: logs,
-              rowBuilder: (log) => [
-                Text(
-                  log.action,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                Text(
-                  log.resource,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                Text(
-                  log.user,
-                  style: const TextStyle(color: AppTheme.textSecondary),
-                ),
-                Text(
-                  log.ip,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    color: AppTheme.textTertiary,
-                  ),
-                ),
-                Text(
-                  DateFormat('yyyy-MM-dd HH:mm:ss').format(log.timestamp),
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: log.status == 'Success'
-                        ? AppTheme.successColor.withValues(alpha: 0.1)
-                        : AppTheme.errorColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    log.status,
-                    style: TextStyle(
-                      color: log.status == 'Success'
-                          ? AppTheme.successColor
-                          : AppTheme.errorColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+            child: logsAsync.when(
+              data: (logs) => SmartTable<AuditLog>(
+                columns: const [
+                  'Action',
+                  'Resource',
+                  'User',
+                  'Details',
+                  'Timestamp',
+                  'Status',
+                ],
+                data: logs,
+                rowBuilder: (log) => [
+                  Text(
+                    log.action,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
                     ),
                   ),
-                ),
-              ],
+                  Text(
+                    '${log.entity} #${log.entityId}',
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  Text(
+                    log.changedBy,
+                    style: const TextStyle(color: AppTheme.textSecondary),
+                  ),
+                  const Text(
+                    'Completed',
+                    style: TextStyle(color: AppTheme.textSecondary),
+                  ),
+                  Text(
+                    DateFormat('yyyy-MM-dd HH:mm:ss').format(log.createdAt),
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.successColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'Success',
+                      style: TextStyle(
+                        color: AppTheme.successColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, _) => Center(child: Text('Error: $err')),
             ),
           ),
         ],

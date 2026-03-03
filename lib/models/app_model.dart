@@ -15,11 +15,13 @@ class Application {
 
   factory Application.fromJson(Map<String, dynamic> json) {
     return Application(
-      id: json['id'].toString(),
-      name: json['name'] as String,
+      id: json['id']?.toString() ?? '',
+      name: json['name'] as String? ?? 'Unnamed App',
       description: json['description'] as String?,
       apiKey: json['api_key'] as String?,
-      createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -31,6 +33,16 @@ class Application {
       'api_key': apiKey,
     };
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Application &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 class Environment {
@@ -47,4 +59,14 @@ class Environment {
       color: json['color'] ?? '#3B82F6',
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Environment &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

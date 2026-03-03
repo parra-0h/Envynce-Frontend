@@ -20,8 +20,6 @@ class ConfigurationsView extends ConsumerStatefulWidget {
 }
 
 class _ConfigurationsViewState extends ConsumerState<ConfigurationsView> {
-  String _searchQuery = '';
-
   @override
   Widget build(BuildContext context) {
     final selectedApp = ref.watch(selectedApplicationProvider);
@@ -33,13 +31,7 @@ class _ConfigurationsViewState extends ConsumerState<ConfigurationsView> {
       return _buildSelectionPlaceholder();
     }
 
-    final configsAsync = ref.watch(
-      configurationsProvider({
-        'application_id': selectedApp.id,
-        'environment_id': selectedEnv.id,
-        'search': _searchQuery.isEmpty ? null : _searchQuery,
-      }),
-    );
+    final configsAsync = ref.watch(configurationsProvider);
 
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -191,12 +183,7 @@ class _ConfigurationsViewState extends ConsumerState<ConfigurationsView> {
                     Text('Error loading configurations: $err'),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () => ref.refresh(
-                        configurationsProvider({
-                          'application_id': selectedApp.id,
-                          'environment_id': selectedEnv.id,
-                        }),
-                      ),
+                      onPressed: () => ref.refresh(configurationsProvider),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -287,7 +274,8 @@ class _ConfigurationsViewState extends ConsumerState<ConfigurationsView> {
                 color: AppTheme.textSecondary,
               ),
             ),
-            onChanged: (value) => setState(() => _searchQuery = value),
+            onChanged: (value) =>
+                ref.read(configSearchQueryProvider.notifier).set(value),
           ),
         ),
       ],

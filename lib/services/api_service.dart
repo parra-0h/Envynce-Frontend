@@ -68,10 +68,15 @@ class ApiService {
 
   Exception _handleError(DioException e) {
     if (e.response != null) {
-      final message =
-          e.response?.data?['message'] ??
-          e.response?.data?['error'] ??
-          e.message;
+      String? message;
+      if (e.response?.data is Map) {
+        message = e.response?.data['message'] ?? e.response?.data['error'];
+      } else if (e.response?.data is String &&
+          (e.response?.data as String).length < 100) {
+        message = e.response?.data as String;
+      }
+
+      message ??= e.message;
       return Exception('API Error: ${e.response?.statusCode} - $message');
     }
     return Exception('Network Error: ${e.message}');
