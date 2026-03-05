@@ -152,16 +152,107 @@ class EnvironmentsView extends ConsumerWidget {
                 child: Text(isSelected ? 'Selected' : 'Select'),
               ),
               if (canEdit)
-                IconButton(
+                PopupMenuButton<String>(
                   icon: const Icon(
                     LucideIcons.settings,
                     size: 16,
                     color: AppTheme.textSecondary,
                   ),
-                  onPressed: () {},
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _showEditEnvDialog(context, ref, env);
+                    } else if (value == 'delete') {
+                      _confirmDeleteEnv(context, ref, env);
+                    }
+                  },
                   tooltip: 'Settings',
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
                 ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditEnvDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Environment env,
+  ) {
+    final nameController = TextEditingController(text: env.name);
+    final descController = TextEditingController(text: env.description);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Environment'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            TextField(
+              controller: descController,
+              decoration: const InputDecoration(labelText: 'Description'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.isNotEmpty) {
+                await ref.read(
+                  updateEnvironmentProvider({
+                    'id': env.id,
+                    'name': nameController.text,
+                    'description': descController.text,
+                  }).future,
+                );
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteEnv(BuildContext context, WidgetRef ref, Environment env) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Environment'),
+        content: Text(
+          'Are you sure you want to delete ${env.name}? This will affect all associated configurations.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await ref.read(deleteEnvironmentProvider(env.id).future);
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

@@ -40,13 +40,15 @@ class ApiKeysView extends ConsumerWidget {
                 columns: const [
                   'Name',
                   'Token Prefix',
+                  'Scope',
                   'Last Used',
-                  'Created',
+                  'Expires',
                   'Status',
                   'Actions',
                 ],
                 data: keys,
                 rowBuilder: (key) => [
+                  // Name
                   Row(
                     children: [
                       const Icon(
@@ -64,6 +66,7 @@ class ApiKeysView extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  // Prefix
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -75,29 +78,93 @@ class ApiKeysView extends ConsumerWidget {
                       border: Border.all(color: AppTheme.borderColor),
                     ),
                     child: Text(
-                      key.prefix,
+                      key.prefix.isNotEmpty ? key.prefix : '—',
                       style: const TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 13,
                       ),
                     ),
                   ),
+                  // Scope
+                  key.applications.isEmpty
+                      ? const Text(
+                          'All Apps',
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12,
+                          ),
+                        )
+                      : Wrap(
+                          spacing: 4,
+                          children: key.applications
+                              .take(2)
+                              .map(
+                                (a) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryColor.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    a.name,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppTheme.primaryColor,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                  // Last Used
                   Text(
                     key.lastUsed != null
                         ? _formatRelative(key.lastUsed!)
                         : 'Never',
                     style: const TextStyle(color: AppTheme.textSecondary),
                   ),
-                  Text(
-                    DateFormat('MMM d, y').format(key.createdAt),
-                    style: const TextStyle(color: AppTheme.textSecondary),
-                  ),
+                  // Expires At
+                  key.expiresAt != null
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              DateFormat('MMM d, y').format(key.expiresAt!),
+                              style: TextStyle(
+                                color: key.isExpired
+                                    ? AppTheme.errorColor
+                                    : AppTheme.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                            if (key.isExpired)
+                              const Text(
+                                'EXPIRED',
+                                style: TextStyle(
+                                  color: AppTheme.errorColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
+                        )
+                      : const Text(
+                          'Never',
+                          style: TextStyle(color: AppTheme.textSecondary),
+                        ),
+                  // Status
                   StatusBadge(
-                    label: key.status.toUpperCase(),
-                    type: key.status == 'active'
+                    label: key.isExpired ? 'EXPIRED' : key.status.toUpperCase(),
+                    type: (key.status == 'active' && !key.isExpired)
                         ? StatusType.success
                         : StatusType.error,
                   ),
+                  // Actions
                   Row(
                     children: [
                       IconButton(
@@ -116,7 +183,7 @@ class ApiKeysView extends ConsumerWidget {
                         },
                         tooltip: 'Copy Prefix',
                       ),
-                      if (key.status == 'active')
+                      if (key.status == 'active' && !key.isExpired)
                         IconButton(
                           icon: const Icon(
                             LucideIcons.trash2,
@@ -148,34 +215,84 @@ class ApiKeysView extends ConsumerWidget {
 
   Future<void> _showGenerateDialog(BuildContext context, WidgetRef ref) async {
     final nameController = TextEditingController();
-    final result = await showDialog<String>(
+    DateTime? selectedExpiry;
+
+    final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Generate API Key'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Key Name',
-            hintText: 'e.g. Production Server',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Generate API Key'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Key Name',
+                  hintText: 'e.g. Production Server',
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(
+                    LucideIcons.calendar,
+                    size: 16,
+                    color: AppTheme.textSecondary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      selectedExpiry != null
+                          ? 'Expires: ${DateFormat('MMM d, y').format(selectedExpiry!)}'
+                          : 'No expiry date (optional)',
+                      style: const TextStyle(color: AppTheme.textSecondary),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now().add(
+                          const Duration(days: 365),
+                        ),
+                        firstDate: DateTime.now().add(const Duration(days: 1)),
+                        lastDate: DateTime.now().add(
+                          const Duration(days: 3650),
+                        ),
+                      );
+                      if (date != null) {
+                        setState(() => selectedExpiry = date);
+                      }
+                    },
+                    child: const Text('Pick Date'),
+                  ),
+                ],
+              ),
+            ],
           ),
-          autofocus: true,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Generate'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, nameController.text),
-            child: const Text('Generate'),
-          ),
-        ],
       ),
     );
 
-    if (result != null && result.isNotEmpty) {
+    if (result == true && nameController.text.isNotEmpty) {
       try {
-        final newKey = await ref.read(createApiKeyProvider(result).future);
+        final payload = <String, dynamic>{'name': nameController.text};
+        if (selectedExpiry != null) {
+          payload['expires_at'] = selectedExpiry!.toUtc().toIso8601String();
+        }
+        final newKey = await ref.read(createApiKeyProvider(payload).future);
         if (context.mounted) {
           _showNewKeyDialog(context, newKey);
         }
@@ -224,12 +341,22 @@ class ApiKeysView extends ConsumerWidget {
                 key.key ?? 'Error: Key not returned',
                 style: const TextStyle(
                   fontFamily: 'monospace',
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.primaryColor,
                 ),
               ),
             ),
+            if (key.expiresAt != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Expires: ${DateFormat('MMM d, y').format(key.expiresAt!)}',
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ],
         ),
         actions: [

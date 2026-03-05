@@ -1,4 +1,4 @@
-enum UserRole { admin, editor, viewer }
+enum UserRole { admin, developer, viewer }
 
 class User {
   final String id;
@@ -26,8 +26,9 @@ class User {
     switch (role.toLowerCase()) {
       case 'admin':
         return UserRole.admin;
-      case 'editor':
-        return UserRole.editor;
+      case 'developer':
+      case 'editor': // Backward compatibility
+        return UserRole.developer;
       case 'viewer':
       default:
         return UserRole.viewer;
@@ -44,5 +45,6 @@ class User {
   }
 
   bool get isAdmin => role == UserRole.admin;
-  bool get canEdit => role == UserRole.admin || role == UserRole.editor;
+  bool get canEdit => role == UserRole.admin || role == UserRole.developer;
+  bool get canDelete => role == UserRole.admin;
 }

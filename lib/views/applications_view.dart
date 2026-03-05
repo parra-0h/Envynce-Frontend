@@ -101,13 +101,32 @@ class ApplicationsView extends ConsumerWidget {
                           child: const Text('Select'),
                         ),
                         if (canEdit)
-                          IconButton(
+                          PopupMenuButton<String>(
                             icon: const Icon(
                               LucideIcons.moreHorizontal,
                               size: 16,
                               color: AppTheme.textSecondary,
                             ),
-                            onPressed: () {},
+                            onSelected: (value) {
+                              if (value == 'edit') {
+                                _showEditAppDialog(context, ref, app);
+                              } else if (value == 'delete') {
+                                _confirmDeleteApp(context, ref, app);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Text('Edit'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Text(
+                                  'Delete',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
                           ),
                       ],
                     ),
@@ -117,6 +136,81 @@ class ApplicationsView extends ConsumerWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(child: Text('Error: $err')),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditAppDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Application app,
+  ) {
+    final nameController = TextEditingController(text: app.name);
+    final descController = TextEditingController(text: app.description);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Application'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            TextField(
+              controller: descController,
+              decoration: const InputDecoration(labelText: 'Description'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.isNotEmpty) {
+                await ref.read(
+                  updateApplicationProvider({
+                    'id': app.id,
+                    'name': nameController.text,
+                    'description': descController.text,
+                  }).future,
+                );
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteApp(BuildContext context, WidgetRef ref, Application app) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Application'),
+        content: Text(
+          'Are you sure you want to delete ${app.name}? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await ref.read(deleteApplicationProvider(app.id).future);
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

@@ -48,14 +48,21 @@ class Application {
 class Environment {
   final String id;
   final String name;
+  final String? description;
   final String color;
 
-  Environment({required this.id, required this.name, required this.color});
+  Environment({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.color,
+  });
 
   factory Environment.fromJson(Map<String, dynamic> json) {
     return Environment(
       id: json['id'].toString(),
       name: json['name'] as String,
+      description: json['description'] as String?,
       color: json['color'] ?? '#3B82F6',
     );
   }

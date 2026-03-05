@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_provider.dart';
 
@@ -29,6 +30,15 @@ class DashboardStats {
 
 final dashboardStatsProvider = FutureProvider<DashboardStats>((ref) async {
   final api = ref.watch(apiServiceProvider);
+
+  // Set up a timer to invalidate this provider every 10 seconds for real-time updates
+  final timer = Timer(const Duration(seconds: 10), () {
+    ref.invalidateSelf();
+  });
+
+  // Ensure the timer is cancelled when the provider is disposed or refreshed
+  ref.onDispose(() => timer.cancel());
+
   final response = await api.get('/dashboard/stats');
   final data = response.data['data'] ?? response.data;
   return DashboardStats.fromJson(data);

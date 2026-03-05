@@ -58,6 +58,8 @@ class ConfigVersion {
   final String key;
   final String value;
   final String version;
+  final String? description;
+  final bool active;
   final DateTime createdAt;
   final String? createdBy;
 
@@ -66,6 +68,8 @@ class ConfigVersion {
     required this.key,
     required this.value,
     required this.version,
+    this.description,
+    this.active = false,
     required this.createdAt,
     this.createdBy,
   });
@@ -75,7 +79,13 @@ class ConfigVersion {
       id: json['id']?.toString() ?? '',
       key: json['key'] as String? ?? '',
       value: json['value'] as String? ?? '',
-      version: json['version']?.toString() ?? '1',
+      // Backend uses version_number; fall back to version for compat
+      version:
+          json['version_number']?.toString() ??
+          json['version']?.toString() ??
+          '1',
+      description: json['description'] as String?,
+      active: json['active'] as bool? ?? false,
       createdAt:
           DateTime.tryParse(json['created_at']?.toString() ?? '') ??
           DateTime.now(),

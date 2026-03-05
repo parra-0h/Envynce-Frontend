@@ -12,7 +12,7 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print('[DEBUG-V2] MyApp.build called');
+    debugPrint('[DEBUG-V2] MyApp.build called');
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(

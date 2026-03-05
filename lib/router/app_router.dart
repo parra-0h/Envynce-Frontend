@@ -10,6 +10,8 @@ import '../views/version_history_view.dart';
 import '../views/api_keys_view.dart';
 import '../views/audit_logs_view.dart';
 import '../views/login_view.dart';
+import '../views/profile_view.dart';
+import '../views/user_management_view.dart';
 import '../providers/auth_provider.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
@@ -76,6 +78,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/logs',
             builder: (context, state) => const AuditLogsView(),
           ),
+          GoRoute(
+            path: '/profile',
+            builder: (context, state) => const ProfileView(),
+          ),
+          GoRoute(
+            path: '/users',
+            builder: (context, state) => const UserManagementView(),
+          ),
         ],
       ),
     ],
@@ -85,7 +95,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 // A listenable to refresh the router when auth state changes
 class _AuthRefreshListenable extends ChangeNotifier {
   _AuthRefreshListenable(this.ref) {
-    ref.listen(authProvider, (_, __) {
+    ref.listen(authProvider, (_, _) {
       notifyListeners();
     });
   }

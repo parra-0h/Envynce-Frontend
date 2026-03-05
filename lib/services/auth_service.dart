@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../models/auth_response.dart';
 import 'api_service.dart';
 
@@ -21,7 +22,7 @@ class AuthService {
       await _apiService.post('/auth/logout', {});
     } catch (e) {
       // Even if API logout fails, we want to clear local state
-      print('Logout API call failed: $e');
+      debugPrint('Logout API call failed: $e');
     }
   }
 

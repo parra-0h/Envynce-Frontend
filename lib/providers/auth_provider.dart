@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
@@ -40,7 +41,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
 class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
-    print('[DEBUG-V2] AuthNotifier.build called');
+    debugPrint('[DEBUG-V2] AuthNotifier.build called');
     return AuthState();
   }
 

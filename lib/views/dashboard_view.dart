@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../widgets/page_header.dart';
 import '../widgets/metric_card.dart';
@@ -38,14 +39,14 @@ class DashboardView extends ConsumerWidget {
                       const SizedBox(width: 24),
                       Expanded(
                         flex: 1,
-                        child: _buildRecentActivityList(stats.updates),
+                        child: _buildRecentActivityList(context, stats.updates),
                       ),
                     ],
                   ],
                 ),
                 if (MediaQuery.of(context).size.width <= 1200) ...[
                   const SizedBox(height: 24),
-                  _buildRecentActivityList(stats.updates),
+                  _buildRecentActivityList(context, stats.updates),
                 ],
               ],
             ),
@@ -118,7 +119,7 @@ class DashboardView extends ConsumerWidget {
     );
   }
 
-  Widget _buildRecentActivityList(List<dynamic> updates) {
+  Widget _buildRecentActivityList(BuildContext context, List<dynamic> updates) {
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,7 +135,10 @@ class DashboardView extends ConsumerWidget {
                   color: AppTheme.textPrimary,
                 ),
               ),
-              TextButton(onPressed: () {}, child: const Text('View All')),
+              TextButton(
+                onPressed: () => context.go('/audit-logs'),
+                child: const Text('View All'),
+              ),
             ],
           ),
           const SizedBox(height: 16),

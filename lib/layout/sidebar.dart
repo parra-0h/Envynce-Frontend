@@ -96,6 +96,12 @@ class Sidebar extends ConsumerWidget {
                   label: 'Audit Logs',
                   route: '/logs',
                 ),
+                if (user?.isAdmin ?? false)
+                  _SidebarItem(
+                    icon: LucideIcons.users,
+                    label: 'User Management',
+                    route: '/users',
+                  ),
               ],
             ),
           ),
@@ -143,59 +149,66 @@ class Sidebar extends ConsumerWidget {
     final nameInitial = user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U';
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: Color(0xFF253858))),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: AppTheme.primaryColor,
-            radius: 18,
-            child: Text(
-              nameInitial,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user.name,
+      child: InkWell(
+        onTap: () => context.go('/profile'),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: AppTheme.primaryColor,
+                radius: 18,
+                child: Text(
+                  nameInitial,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  user.role.toString().split('.').last.toUpperCase(),
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      user.role.toString().split('.').last.toUpperCase(),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => ref.read(authProvider.notifier).logout(),
+                icon: Icon(
+                  LucideIcons.logOut,
+                  size: 18,
+                  color: Colors.white.withValues(alpha: 0.6),
+                ),
+                tooltip: 'Logout',
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: () => ref.read(authProvider.notifier).logout(),
-            icon: Icon(
-              LucideIcons.logOut,
-              size: 18,
-              color: Colors.white.withValues(alpha: 0.6),
-            ),
-            tooltip: 'Logout',
-          ),
-        ],
+        ),
       ),
     );
   }
